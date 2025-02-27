@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Icecast2 Streaming Server
+  icecast:
+    image: moul/icecast
+    container_name: radio-icecast
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config/icecast.xml:/etc/icecast2/icecast.xml
+      - ./logs/icecast:/var/log/icecast2
+    environment:
+      - ICECAST_SOURCE_PASSWORD=your_source_password
+      - ICECAST_ADMIN_PASSWORD=your_admin_password
+      - ICECAST_RELAY_PASSWORD=your_relay_password
+      - ICECAST_HOSTNAME=listen.cfur.ca
+    networks:
+      - radio-network
+
+  # Liquidsoap for Stream Processing and Failover
+  liquidsoap:
+    image: savonet/liquidsoap:v2.1.4
+    container_name: radio-liquidsoap
+    restart: unless-stopped
+    depends_on:
+      - icecast
+    volumes:
+      - ./config/radio.liq:/radio.liq
+      - ./backup_music:/backup_music
+    ports:
+      - "8010:8010" # Harbor input port for Audio Hijack
+    command: /radio.liq
+    networks:
+      - radio-network
+
+  # Caddy Web Server
+  caddy:
+    image: caddy:2.6
+    container_name: radio-caddy
+    restart: unless-stopped
+    depends_on:
+      - icecast
+      - liquidsoap
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - ./data/caddy:/data
+    environment:
+      - CADDY_HOST=listen.cfur.ca
+    networks:
+      - radio-network
+
+networks:
+  radio-network:
+    driver: bridgeersion: '3.8'
+

@@ -1,0 +1,44 @@
+{
+  # Email for Let's Encrypt notifications
+  email your@email.ca
+}
+
+listen.cfur.ca {
+  # MP3 Stream
+  handle /mp3 {
+    reverse_proxy icecast:8000/live.mp3 {
+      header_up Host {http.request.host}
+      header_up X-Real-IP {remote_host}
+      header_up X-Forwarded-For {remote_host}
+      header_up X-Forwarded-Proto {scheme}
+      header_down Access-Control-Allow-Origin *
+    }
+  }
+  
+  # Default to MP3 stream
+  handle / {
+    reverse_proxy icecast:8000/live.mp3 {
+      header_up Host {http.request.host}
+      header_up X-Real-IP {remote_host}
+      header_up X-Forwarded-For {remote_host}
+      header_up X-Forwarded-Proto {scheme}
+      header_down Access-Control-Allow-Origin *
+    }
+  }
+  
+  # AAC Stream
+  handle /aac {
+    reverse_proxy icecast:8000/stream.acc {
+      header_up Host {http.request.host}
+      header_up X-Real-IP {remote_host}
+      header_up X-Forwarded-For {remote_host}
+      header_up X-Forwarded-Proto {scheme}
+      header_down Access-Control-Allow-Origin *
+    }
+  }
+  
+  # Icecast Status page
+  handle /status {
+    reverse_proxy icecast:8000/status.xsl
+  }
+}
